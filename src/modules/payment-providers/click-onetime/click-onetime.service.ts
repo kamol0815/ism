@@ -178,8 +178,13 @@ export class ClickOnetimeService {
                 };
             }
 
-            // Summani tekshirish
-            if (Number(amount) !== Number(plan.price)) {
+            // Summani tekshirish - Click da integer bo'lishi kerak
+            if (parseInt(`${amount}`) !== parseInt(`${plan.price}`)) {
+                this.logger.warn('Amount mismatch in Click onetime', {
+                    clickAmount: parseInt(`${amount}`),
+                    planPrice: parseInt(`${plan.price}`),
+                    planPriceOriginal: plan.price
+                });
                 return {
                     click_trans_id,
                     merchant_trans_id,

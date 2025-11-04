@@ -157,6 +157,29 @@ export class ClickService {
       };
     }
 
+    // Plan mavjudligini va amount to'g'riligini tekshirish
+    const plan = await this.planRepository.findOne({ where: { id: planId } });
+
+    if (!plan) {
+      return {
+        error: ClickError.UserNotFound,
+        error_note: 'Invalid planId',
+      };
+    }
+
+    // Click da summa integer bo'lishi kerak (5555), Payme da decimal (5555.00)
+    if (parseInt(`${amount}`) !== parseInt(`${plan.price}`)) {
+      logger.warn('Amount mismatch in Click prepare', {
+        clickAmount: parseInt(`${amount}`),
+        planPrice: parseInt(`${plan.price}`),
+        planPriceOriginal: plan.price
+      });
+      return {
+        error: ClickError.InvalidAmount,
+        error_note: 'Invalid amount',
+      };
+    }
+
     // Check if the transaction already exists and is not in a PENDING state
     const existingTransaction = await this.transactionRepository.findOne({
       where: {
@@ -181,7 +204,7 @@ export class ClickService {
       transId,
       prepareId: time,
       status: TransactionStatus.PENDING,
-      amount: clickReqBody.amount,
+      amount: parseInt(`${clickReqBody.amount}`), // Click da integer sifatida saqlash
       createdAt: new Date(time),
     });
     await this.transactionRepository.save(newTransaction);
@@ -306,7 +329,13 @@ export class ClickService {
       };
     }
 
-    if (parseInt(`${amount}`) !== plan.price) {
+    // Click da summa integer bo'lishi kerak (5555), Payme da decimal (5555.00)
+    if (parseInt(`${amount}`) !== parseInt(`${plan.price}`)) {
+      logger.warn('Amount mismatch in Click complete', {
+        clickAmount: parseInt(`${amount}`),
+        planPrice: parseInt(`${plan.price}`),
+        planPriceOriginal: plan.price
+      });
       return {
         error: ClickError.InvalidAmount,
         error_note: 'Invalid amount',
