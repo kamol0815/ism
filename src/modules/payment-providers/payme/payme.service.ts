@@ -168,18 +168,14 @@ export class PaymeService {
         requestAmountInSom: checkPerformTransactionDto.params.amount / 100,
       });
 
-      if (checkPerformTransactionDto.params.amount === plan.price) {
-        logger.info('✅ Amount matches exactly (in tiyns)');
-        return {
-          result: {
-            allow: true,
-          },
-        };
-      }
-      if (plan.price !== checkPerformTransactionDto.params.amount / 100) {
-        logger.warn('❌ Invalid amount', {
-          expected: plan.price,
-          received: checkPerformTransactionDto.params.amount / 100,
+      // Payme da summa tiynlarda keladi (555500 = 5555.00 som)
+      // Plan narxi integer sifatida saqlangan (5555)
+      const amountInSom = checkPerformTransactionDto.params.amount / 100;
+      if (amountInSom !== plan.price) {
+        logger.warn('❌ Invalid amount in Payme checkPerformTransaction', {
+          expectedPlanPrice: plan.price,
+          receivedAmountInSom: amountInSom,
+          receivedAmountInTiyns: checkPerformTransactionDto.params.amount,
         });
         return {
           error: PaymeError.InvalidAmount,
@@ -283,11 +279,15 @@ export class PaymeService {
         };
       }
 
-      if (createTransactionDto.params.amount / 100 !== plan.price) {
-        console.log(
-          'the amount in sum is: ',
-          createTransactionDto.params.amount / 100,
-        );
+      // Payme da summa tiynlarda keladi (555500 = 5555.00 som)
+      // Plan narxi integer sifatida saqlangan (5555)
+      const amountInSom = createTransactionDto.params.amount / 100;
+      if (amountInSom !== plan.price) {
+        logger.warn('❌ Invalid amount in Payme createTransaction', {
+          expectedPlanPrice: plan.price,
+          receivedAmountInSom: amountInSom,
+          receivedAmountInTiyns: createTransactionDto.params.amount,
+        });
         return {
           error: PaymeError.InvalidAmount,
           id: transId,
