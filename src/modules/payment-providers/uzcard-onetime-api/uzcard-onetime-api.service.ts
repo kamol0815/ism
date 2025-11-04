@@ -83,9 +83,15 @@ export class UzcardOnetimeApiService {
       const payload = {
         cardNumber: dto.cardNumber,
         expireDate: dto.expireDate,
-        amount: plan.price,
+        amount: parseInt(`${plan.price}`), // UzCard da integer kerak (5555)
         extraId: extraId,
       };
+
+      logger.info('💰 UzCard amount validation', {
+        planPriceOriginal: plan.price,
+        planPriceType: typeof plan.price,
+        amountForPayment: parseInt(`${plan.price}`),
+      });
 
       const headers = this.getHeaders();
 
@@ -152,8 +158,11 @@ export class UzcardOnetimeApiService {
       if (!user) {
         throw new Error('User not found or unauthorized');
       }
+      // UzCard da plan qidirish - selectedService yoki planId bo'yicha
       const plan = await this.planRepository.findOne({
-        where: { selectedName: dto.selectedService },
+        where: dto.selectedService ?
+          { selectedName: dto.selectedService } :
+          { id: dto.planId }
       });
 
       if (!plan) {

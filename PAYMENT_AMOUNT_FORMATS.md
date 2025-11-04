@@ -36,27 +36,44 @@ if (parseInt(`${amount}`) !== parseInt(`${plan.price}`)) {
 ### 3. Payme Payment
 **Format:** Tiyns (1/100 of som)
 - Payme sends: `555500` (in tiyns, represents 5555.00 som)
-- Our validation: `555500 / 100 === 5555` ✅
+- Our validation: `555500 / 100 === parseFloat("5555.00")` ✅
 - Code location: `src/modules/payment-providers/payme/payme.service.ts`
 
 ```typescript
 // Payme da summa tiynlarda keladi (555500 = 5555.00 som)
-// Plan narxi integer sifatida saqlangan (5555)
+// Plan narxi decimal sifatida saqlangan ("5555.00"), parseFloat qilamiz
 const amountInSom = params.amount / 100;
-if (amountInSom !== plan.price) {
+const planPriceAsNumber = parseFloat(plan.price.toString());
+if (amountInSom !== planPriceAsNumber) {
   // Error handling
 }
 ```
 
+### 4. UzCard Payment
+**Format:** Som (integer expected by UzCard API)
+- UzCard expects: `5555` (integer)
+- Our conversion: `parseInt("5555.00") → 5555` ✅
+- Code location: `src/modules/payment-providers/uzcard-onetime-api/uzcard-onetime-api.service.ts`
+
+```typescript
+const payload = {
+  cardNumber: dto.cardNumber,
+  expireDate: dto.expireDate,
+  amount: parseInt(`${plan.price}`), // UzCard da integer kerak (5555)
+  extraId: extraId,
+};
+```
+
 ## Examples
 
-For a plan with price `5555` som:
+For a plan with price `5555` som (stored as decimal `5555.00` in database):
 
 | Provider | Incoming Amount | Validation Logic | Result |
 |----------|----------------|------------------|---------|
-| Click | `5555.00` | `parseInt("5555.00") === parseInt("5555")` | ✅ Valid |
-| Click Onetime | `5555.00` | `parseInt("5555.00") === parseInt("5555")` | ✅ Valid |
-| Payme | `555500` | `555500 / 100 === 5555` | ✅ Valid |
+| Click | `5555.00` | `parseInt("5555.00") === parseInt("5555.00")` | ✅ Valid |
+| Click Onetime | `5555.00` | `parseInt("5555.00") === parseInt("5555.00")` | ✅ Valid |
+| Payme | `555500` | `555500 / 100 === parseFloat("5555.00")` | ✅ Valid |
+| UzCard | - | `parseInt("5555.00") → 5555` | ✅ Valid |
 
 ## Implementation Notes
 

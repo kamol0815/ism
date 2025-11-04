@@ -520,7 +520,7 @@ export class BotService implements OnModuleInit, OnModuleDestroy {
           amount: plan.price,
         });
       } else if (provider === 'uzcard') {
-        paymentLink = `${config.BASE_URL}/api/uzcard-onetime-api/onetime-payment?userId=${userId}&planId=${planId}`;
+        paymentLink = `${config.BASE_URL}/api/uzcard-onetime-api/onetime-payment?userId=${userId}&planId=${planId}&selectedService=${plan.selectedName}`;
       }
 
       const keyboard = new InlineKeyboard()

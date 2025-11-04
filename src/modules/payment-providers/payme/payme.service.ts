@@ -169,11 +169,13 @@ export class PaymeService {
       });
 
       // Payme da summa tiynlarda keladi (555500 = 5555.00 som)
-      // Plan narxi integer sifatida saqlangan (5555)
+      // Plan narxi string yoki number bo'lishi mumkin, parseFloat qilamiz
       const amountInSom = checkPerformTransactionDto.params.amount / 100;
-      if (amountInSom !== plan.price) {
+      const planPriceAsNumber = parseFloat(plan.price.toString());
+      if (amountInSom !== planPriceAsNumber) {
         logger.warn('❌ Invalid amount in Payme checkPerformTransaction', {
           expectedPlanPrice: plan.price,
+          expectedPlanPriceAsNumber: planPriceAsNumber,
           receivedAmountInSom: amountInSom,
           receivedAmountInTiyns: checkPerformTransactionDto.params.amount,
         });
@@ -280,11 +282,13 @@ export class PaymeService {
       }
 
       // Payme da summa tiynlarda keladi (555500 = 5555.00 som)
-      // Plan narxi integer sifatida saqlangan (5555)
+      // Plan narxi string yoki number bo'lishi mumkin, parseFloat qilamiz
       const amountInSom = createTransactionDto.params.amount / 100;
-      if (amountInSom !== plan.price) {
+      const planPriceAsNumber = parseFloat(plan.price.toString());
+      if (amountInSom !== planPriceAsNumber) {
         logger.warn('❌ Invalid amount in Payme createTransaction', {
           expectedPlanPrice: plan.price,
+          expectedPlanPriceAsNumber: planPriceAsNumber,
           receivedAmountInSom: amountInSom,
           receivedAmountInTiyns: createTransactionDto.params.amount,
         });
