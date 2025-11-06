@@ -48,7 +48,7 @@ export class UzCardApiService {
     private readonly userCardRepository: Repository<UserCardEntity>,
     @InjectRepository(UserSubscriptionEntity)
     private readonly userSubscriptionRepository: Repository<UserSubscriptionEntity>,
-  ) { }
+  ) {}
 
   async addCard(dto: AddCardDto): Promise<AddCardResponseDto | ErrorResponse> {
     const headers = this.getHeaders();
@@ -67,7 +67,7 @@ export class UzCardApiService {
         { headers },
       );
 
-      console.log(apiResponse)
+      console.log(apiResponse);
 
       if (apiResponse.data.error) {
         const errorCode =
@@ -99,7 +99,9 @@ export class UzCardApiService {
 
         // If error is -108 (card already exists), try to delete and re-add
         if (errorCode === '-108') {
-          logger.info(`Card already exists (error -108). Attempting to delete and re-add for user: ${dto.userId}`);
+          logger.info(
+            `Card already exists (error -108). Attempting to delete and re-add for user: ${dto.userId}`,
+          );
 
           try {
             // Find and delete existing card from database
@@ -111,20 +113,21 @@ export class UzCardApiService {
             });
 
             if (existingCard && existingCard.UzcardIdForDeleteCard) {
-              logger.info(`Found existing card, attempting to delete from Uzcard API...`);
+              logger.info(
+                `Found existing card, attempting to delete from Uzcard API...`,
+              );
 
               // Delete card from Uzcard API
               try {
-                await axios.delete(
-                  `${this.baseUrl}/UserCard/deleteUserCard`,
-                  {
-                    headers,
-                    params: { userCardId: existingCard.UzcardIdForDeleteCard },
-                  },
-                );
+                await axios.delete(`${this.baseUrl}/UserCard/deleteUserCard`, {
+                  headers,
+                  params: { userCardId: existingCard.UzcardIdForDeleteCard },
+                });
                 logger.info(`Card deleted from Uzcard API successfully`);
               } catch (deleteError) {
-                logger.warn(`Failed to delete card from Uzcard API, continuing anyway...`);
+                logger.warn(
+                  `Failed to delete card from Uzcard API, continuing anyway...`,
+                );
               }
 
               // Delete card from our database
@@ -132,7 +135,7 @@ export class UzCardApiService {
               logger.info(`Card deleted from database successfully`);
 
               // Wait a moment for Uzcard system to process
-              await new Promise(resolve => setTimeout(resolve, 1000));
+              await new Promise((resolve) => setTimeout(resolve, 1000));
 
               // Try to add the card again
               logger.info(`Attempting to re-add card...`);
@@ -143,11 +146,14 @@ export class UzCardApiService {
               );
 
               if (retryResponse.data.error) {
-                const retryErrorCode = retryResponse.data.error.errorCode?.toString() || 'unknown';
+                const retryErrorCode =
+                  retryResponse.data.error.errorCode?.toString() || 'unknown';
                 return {
                   success: false,
                   errorCode: retryErrorCode,
-                  message: retryResponse.data.error.errorMessage || this.getErrorMessage(retryErrorCode),
+                  message:
+                    retryResponse.data.error.errorMessage ||
+                    this.getErrorMessage(retryErrorCode),
                 };
               }
 
@@ -158,10 +164,14 @@ export class UzCardApiService {
                 success: true,
               };
             } else {
-              logger.warn(`No existing card found in database, but Uzcard says card exists`);
+              logger.warn(
+                `No existing card found in database, but Uzcard says card exists`,
+              );
             }
           } catch (cleanupError) {
-            logger.error(`Error during card cleanup and retry: ${cleanupError}`);
+            logger.error(
+              `Error during card cleanup and retry: ${cleanupError}`,
+            );
           }
         }
 
@@ -268,13 +278,15 @@ export class UzCardApiService {
       // Check if user already has a UZCARD card
       const existingCard = await UserCardsModel.findOne({
         telegramId: user.telegramId,
-        cardType: CardType.UZCARD
+        cardType: CardType.UZCARD,
       });
 
       let userCard;
       if (existingCard) {
         // Update existing card
-        logger.info(`Updating existing UZCARD card for user: ${user.telegramId}`);
+        logger.info(
+          `Updating existing UZCARD card for user: ${user.telegramId}`,
+        );
         existingCard.incompleteCardNumber = incompleteCardNumber;
         existingCard.cardToken = cardId;
         existingCard.expireDate = expireDate;

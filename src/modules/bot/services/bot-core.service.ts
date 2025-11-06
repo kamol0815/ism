@@ -8,6 +8,11 @@ interface SessionData {
     type: string;
   };
   hasAgreedToTerms?: boolean;
+  mainMenuMessageId?: number;
+  flow?: Record<string, unknown>;
+  favoritesPage?: number;
+  quizAnswers?: Record<string, string>;
+  quizTags?: string[];
 }
 
 export type BotContext = Context & SessionFlavor<SessionData>;

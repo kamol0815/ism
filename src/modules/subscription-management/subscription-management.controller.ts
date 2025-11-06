@@ -1,4 +1,14 @@
-import { Body, Controller, Get, Header, Post, Query, Render, HttpException, BadRequestException } from '@nestjs/common';
+import {
+  Body,
+  Controller,
+  Get,
+  Header,
+  Post,
+  Query,
+  Render,
+  HttpException,
+  BadRequestException,
+} from '@nestjs/common';
 import { SubscriptionManagementService } from './subscription-management.service';
 import { CancelSubscriptionDto } from './dto/cancel-subscription.dto';
 import { config } from 'src/shared/config';
@@ -30,14 +40,18 @@ export class SubscriptionManagementController {
   @Render('subscription/terms')
   showTermsPage() {
     return {
-      cancellationLink: this.subscriptionManagementService.getCancellationLink(),
+      cancellationLink:
+        this.subscriptionManagementService.getCancellationLink(),
     };
   }
 
   @Post('cancel')
   @Header('Content-Type', 'text/html')
   @Render('subscription/cancel')
-  async handleCancellation(@Body() body: CancelSubscriptionDto, @Query('token') token?: string) {
+  async handleCancellation(
+    @Body() body: CancelSubscriptionDto,
+    @Query('token') token?: string,
+  ) {
     let parsedTelegramId: string | undefined;
     try {
       parsedTelegramId = this.parseToken(token);
@@ -46,7 +60,9 @@ export class SubscriptionManagementController {
       }
 
       const result =
-        await this.subscriptionManagementService.cancelSubscription({ telegramId: parsedTelegramId });
+        await this.subscriptionManagementService.cancelSubscription({
+          telegramId: parsedTelegramId,
+        });
       return {
         status: 'success',
         message: result.message,
@@ -89,10 +105,15 @@ export class SubscriptionManagementController {
     }
 
     try {
-      const payload = verifySignedToken<{ telegramId: string | number }>(token, config.PAYMENT_LINK_SECRET);
+      const payload = verifySignedToken<{ telegramId: string | number }>(
+        token,
+        config.PAYMENT_LINK_SECRET,
+      );
       return String(payload.telegramId);
     } catch (error) {
-      throw new BadRequestException('Bekor qilish havolasi eskirgan yoki noto‘g‘ri.');
+      throw new BadRequestException(
+        'Bekor qilish havolasi eskirgan yoki noto‘g‘ri.',
+      );
     }
   }
 }

@@ -6,8 +6,15 @@ import { ClickRequest } from './types/click-request.type';
 import { ClickAction, ClickError } from './enums';
 import logger from '../../../shared/utils/logger';
 import { generateMD5 } from '../../../shared/utils/hashing/hasher.helper';
-import { UserEntity, PlanEntity, TransactionEntity } from '../../../shared/database/entities';
-import { TransactionStatus, PaymentProvider } from '../../../shared/database/entities/enums';
+import {
+  UserEntity,
+  PlanEntity,
+  TransactionEntity,
+} from '../../../shared/database/entities';
+import {
+  TransactionStatus,
+  PaymentProvider,
+} from '../../../shared/database/entities/enums';
 import { BotService } from '../../bot/bot.service';
 
 type TransactionContext = {
@@ -172,7 +179,7 @@ export class ClickService {
       logger.warn('Amount mismatch in Click prepare', {
         clickAmount: parseInt(`${amount}`),
         planPrice: parseInt(`${plan.price}`),
-        planPriceOriginal: plan.price
+        planPriceOriginal: plan.price,
       });
       return {
         error: ClickError.InvalidAmount,
@@ -334,7 +341,7 @@ export class ClickService {
       logger.warn('Amount mismatch in Click complete', {
         clickAmount: parseInt(`${amount}`),
         planPrice: parseInt(`${plan.price}`),
-        planPriceOriginal: plan.price
+        planPriceOriginal: plan.price,
       });
       return {
         error: ClickError.InvalidAmount,
@@ -378,8 +385,8 @@ export class ClickService {
         { id: transaction.userId },
         {
           isActive: true,
-          subscriptionEnd: subscriptionEndDate
-        }
+          subscriptionEnd: subscriptionEndDate,
+        },
       );
 
       logger.info('✅ User activated with lifetime subscription', {
@@ -395,28 +402,31 @@ export class ClickService {
         await bot.api.sendMessage(
           user.telegramId,
           `🎉 <b>Tabriklaymiz!</b>\n\n` +
-          `✅ To'lov muvaffaqiyatli amalga oshirildi!\n` +
-          `💰 Summa: ${plan.price} so'm\n\n` +
-          `🌟 <b>Endi siz VIP foydalanuvchisiz!</b>\n` +
-          `♾️ Barcha ismlar manosi umrbod ochiq!\n\n` +
-          `Botdan bemalol foydalanishingiz mumkin! 🚀\n\n` +
-          `🔮 Endi asosiy botga o'ting: @gbclilBot`,
+            `✅ To'lov muvaffaqiyatli amalga oshirildi!\n` +
+            `💰 Summa: ${plan.price} so'm\n\n` +
+            `🌟 <b>Endi siz VIP foydalanuvchisiz!</b>\n` +
+            `♾️ Barcha ismlar manosi umrbod ochiq!\n\n` +
+            `Botdan bemalol foydalanishingiz mumkin! 🚀\n\n` +
+            `🔮 Endi asosiy botga o'ting: @gbclilBot`,
           {
             parse_mode: 'HTML',
             reply_markup: {
               inline_keyboard: [
                 [
                   {
-                    text: '🔮 Asosiy botga o\'tish',
-                    url: 'https://t.me/gbclilBot'
-                  }
-                ]
-              ]
-            }
-          }
+                    text: "🔮 Asosiy botga o'tish",
+                    url: 'https://t.me/gbclilBot',
+                  },
+                ],
+              ],
+            },
+          },
         );
       } catch (notificationError) {
-        logger.error('Failed to send payment success notification:', notificationError);
+        logger.error(
+          'Failed to send payment success notification:',
+          notificationError,
+        );
       }
     }
 

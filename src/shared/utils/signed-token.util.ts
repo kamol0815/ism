@@ -10,7 +10,8 @@ function base64UrlEncode(buffer: Buffer): string {
 
 function base64UrlDecode(value: string): Buffer {
   const padLength = (4 - (value.length % 4)) % 4;
-  const base64 = value.replace(/-/g, '+').replace(/_/g, '/') + '='.repeat(padLength);
+  const base64 =
+    value.replace(/-/g, '+').replace(/_/g, '/') + '='.repeat(padLength);
   return Buffer.from(base64, 'base64');
 }
 
@@ -24,7 +25,10 @@ export function createSignedToken<T extends Record<string, unknown>>(
 
   const payloadBuffer = Buffer.from(JSON.stringify(payload), 'utf8');
   const encodedPayload = base64UrlEncode(payloadBuffer);
-  const signatureBuffer = crypto.createHmac('sha256', secret).update(encodedPayload).digest();
+  const signatureBuffer = crypto
+    .createHmac('sha256', secret)
+    .update(encodedPayload)
+    .digest();
   const encodedSignature = base64UrlEncode(signatureBuffer);
 
   return `${encodedPayload}.${encodedSignature}`;
@@ -32,7 +36,9 @@ export function createSignedToken<T extends Record<string, unknown>>(
 
 export function verifySignedToken<T>(token: string, secret: string): T {
   if (!secret) {
-    throw new Error('Missing signing secret for payment link token verification');
+    throw new Error(
+      'Missing signing secret for payment link token verification',
+    );
   }
 
   const [encodedPayload, providedSignature] = token.split('.');
@@ -50,7 +56,9 @@ export function verifySignedToken<T>(token: string, secret: string): T {
     throw new Error('Invalid token signature');
   }
 
-  if (!crypto.timingSafeEqual(expectedSignatureBuffer, providedSignatureBuffer)) {
+  if (
+    !crypto.timingSafeEqual(expectedSignatureBuffer, providedSignatureBuffer)
+  ) {
     throw new Error('Token signature mismatch');
   }
 

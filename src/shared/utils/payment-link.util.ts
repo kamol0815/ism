@@ -3,7 +3,11 @@ import { createSignedToken } from './signed-token.util';
 
 const ROUTE_PREFIX = 'payment-link';
 const DEFAULT_GLOBAL_PREFIX = 'api';
-const PLACEHOLDER_HOSTS = new Set(['example.com', 'example.org', 'example.net']);
+const PLACEHOLDER_HOSTS = new Set([
+  'example.com',
+  'example.org',
+  'example.net',
+]);
 
 function sanitizeBase(base: string): string {
   return base.replace(/\/+$/, '');
@@ -90,7 +94,9 @@ export function buildMaskedPaymentLink(path: string): string | undefined {
   return `${base}/${trimmedPath}`;
 }
 
-function deriveApiBaseFromPaymentLink(paymentLinkBase: string): string | undefined {
+function deriveApiBaseFromPaymentLink(
+  paymentLinkBase: string,
+): string | undefined {
   try {
     const url = new URL(paymentLinkBase);
     const segments = url.pathname.split('/').filter(Boolean);
@@ -133,7 +139,9 @@ export function resolveSubscriptionManagementBase(): string | undefined {
   return deriveApiBaseFromPaymentLink(paymentBase);
 }
 
-export function buildSubscriptionManagementLink(path: string): string | undefined {
+export function buildSubscriptionManagementLink(
+  path: string,
+): string | undefined {
   const base = resolveSubscriptionManagementBase();
   if (!base) {
     return undefined;
@@ -143,7 +151,9 @@ export function buildSubscriptionManagementLink(path: string): string | undefine
   return `${base}/${trimmedPath}`;
 }
 
-export function buildSubscriptionCancellationLink(telegramId: number | string): string | undefined {
+export function buildSubscriptionCancellationLink(
+  telegramId: number | string,
+): string | undefined {
   if (!telegramId) {
     return undefined;
   }

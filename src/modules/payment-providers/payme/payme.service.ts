@@ -15,8 +15,16 @@ import { PaymeError } from './constants/payme-error';
 import { CancelingReasons } from './constants/canceling-reasons';
 import logger from '../../../shared/utils/logger';
 import { ValidationHelper } from '../../../shared/utils/validation.helper';
-import { UserEntity, PlanEntity, TransactionEntity } from '../../../shared/database/entities';
-import { PaymentProvider, TransactionStatus, PaymentType } from '../../../shared/database/entities/enums';
+import {
+  UserEntity,
+  PlanEntity,
+  TransactionEntity,
+} from '../../../shared/database/entities';
+import {
+  PaymentProvider,
+  TransactionStatus,
+  PaymentType,
+} from '../../../shared/database/entities/enums';
 import { ConfigService } from '@nestjs/config';
 import { BotService } from '../../bot/bot.service';
 
@@ -47,7 +55,7 @@ export class PaymeService {
     private readonly transactionRepository: Repository<TransactionEntity>,
     private readonly configService: ConfigService,
     private readonly botService: BotService,
-  ) { }
+  ) {}
 
   async handleTransactionMethods(reqBody: RequestBody) {
     const method = reqBody.method;
@@ -136,7 +144,9 @@ export class PaymeService {
       logger.info('📊 Database query results', {
         planFound: !!plan,
         userFound: !!user,
-        planData: plan ? { id: plan.id, name: plan.name, price: plan.price } : null,
+        planData: plan
+          ? { id: plan.id, name: plan.name, price: plan.price }
+          : null,
         userData: user ? { id: user.id, telegramId: user.telegramId } : null,
       });
 
@@ -160,7 +170,7 @@ export class PaymeService {
         return {
           error: PaymeError.AlreadyDone,
         };
-      }      // Payme amount handling - string yoki number bo'lishi mumkin
+      } // Payme amount handling - string yoki number bo'lishi mumkin
       let requestAmount: number;
       const originalAmount = checkPerformTransactionDto.params.amount;
 
@@ -187,7 +197,7 @@ export class PaymeService {
       logger.info('🔍 Payme amount comparison', {
         amountInSom,
         planPriceAsNumber,
-        isEqual: amountInSom === planPriceAsNumber
+        isEqual: amountInSom === planPriceAsNumber,
       });
 
       if (amountInSom !== planPriceAsNumber) {
@@ -256,7 +266,9 @@ export class PaymeService {
       }
 
       if (!ValidationHelper.isValidObjectId(planId)) {
-        logger.warn('❌ Invalid planId format in createTransaction', { planId });
+        logger.warn('❌ Invalid planId format in createTransaction', {
+          planId,
+        });
         return {
           error: PaymeError.ProductNotFound,
           id: transId,
@@ -264,7 +276,9 @@ export class PaymeService {
       }
 
       if (!ValidationHelper.isValidObjectId(userId)) {
-        logger.warn('❌ Invalid userId format in createTransaction', { userId });
+        logger.warn('❌ Invalid userId format in createTransaction', {
+          userId,
+        });
         return {
           error: PaymeError.UserNotFound,
           id: transId,
@@ -299,7 +313,7 @@ export class PaymeService {
           error: PaymeError.AlreadyDone,
           id: transId,
         };
-      }      // Payme amount handling - string yoki number bo'lishi mumkin
+      } // Payme amount handling - string yoki number bo'lishi mumkin
       let requestAmount: number;
       const originalAmount = createTransactionDto.params.amount;
 
@@ -321,7 +335,7 @@ export class PaymeService {
         requestAmountOriginal: originalAmount,
         requestAmountConverted: requestAmount,
         amountInSom,
-        isValid: amountInSom === planPriceAsNumber
+        isValid: amountInSom === planPriceAsNumber,
       });
 
       if (amountInSom !== planPriceAsNumber) {
@@ -349,7 +363,9 @@ export class PaymeService {
 
       if (existingTransaction) {
         // Eski transactionning muddatini tekshirish
-        const isExpired = this.checkTransactionExpiration(existingTransaction.createdAt);
+        const isExpired = this.checkTransactionExpiration(
+          existingTransaction.createdAt,
+        );
 
         if (isExpired) {
           // Muddati tugagan transaction - bekor qilish
@@ -363,7 +379,9 @@ export class PaymeService {
             },
           );
 
-          logger.info(`Expired pending transaction ${existingTransaction.transId} cancelled`);
+          logger.info(
+            `Expired pending transaction ${existingTransaction.transId} cancelled`,
+          );
         } else if (existingTransaction.transId === transId) {
           return {
             result: {
@@ -381,7 +399,7 @@ export class PaymeService {
       }
 
       const transaction = await this.transactionRepository.findOne({
-        where: { transId }
+        where: { transId },
       });
 
       if (transaction) {
@@ -434,7 +452,9 @@ export class PaymeService {
           id: transId,
         };
       }
-      logger.info(`Selected sport before createTransaction: ${selectedService}`);
+      logger.info(
+        `Selected sport before createTransaction: ${selectedService}`,
+      );
 
       const newTransaction = this.transactionRepository.create({
         transId: createTransactionDto.params.id,
@@ -599,14 +619,16 @@ export class PaymeService {
       if (user && plan) {
         // Foydalanuvchini VIP qilish (umrbod obuna)
         const subscriptionEndDate = new Date();
-        subscriptionEndDate.setFullYear(subscriptionEndDate.getFullYear() + 100); // 100 yil (umrbod)
+        subscriptionEndDate.setFullYear(
+          subscriptionEndDate.getFullYear() + 100,
+        ); // 100 yil (umrbod)
 
         await this.userRepository.update(
           { id: user.id },
           {
             subscriptionType: 'onetime' as any,
             isActive: true,
-            subscriptionEnd: subscriptionEndDate
+            subscriptionEnd: subscriptionEndDate,
           },
         );
 
@@ -624,29 +646,32 @@ export class PaymeService {
           await bot.api.sendMessage(
             user.telegramId,
             `🎉 <b>Tabriklaymiz!</b>\n\n` +
-            `✅ Payme orqali to'lov muvaffaqiyatli amalga oshirildi!\n` +
-            `💰 Summa: ${transaction.amount / 100} so'm\n` +
-            `📦 Reja: ${plan.name}\n\n` +
-            `🌟 <b>Endi siz VIP foydalanuvchisiz!</b>\n` +
-            `♾️ Barcha ismlar manosi umrbod ochiq!\n\n` +
-            `Botdan bemalol foydalanishingiz mumkin! 🚀\n\n` +
-            `🔮 Endi asosiy botga o'ting: @gbclilBot`,
+              `✅ Payme orqali to'lov muvaffaqiyatli amalga oshirildi!\n` +
+              `💰 Summa: ${transaction.amount / 100} so'm\n` +
+              `📦 Reja: ${plan.name}\n\n` +
+              `🌟 <b>Endi siz VIP foydalanuvchisiz!</b>\n` +
+              `♾️ Barcha ismlar manosi umrbod ochiq!\n\n` +
+              `Botdan bemalol foydalanishingiz mumkin! 🚀\n\n` +
+              `🔮 Endi asosiy botga o'ting: @gbclilBot`,
             {
               parse_mode: 'HTML',
               reply_markup: {
                 inline_keyboard: [
                   [
                     {
-                      text: '🔮 Asosiy botga o\'tish',
-                      url: 'https://t.me/gbclilBot'
-                    }
-                  ]
-                ]
-              }
-            }
+                      text: "🔮 Asosiy botga o'tish",
+                      url: 'https://t.me/gbclilBot',
+                    },
+                  ],
+                ],
+              },
+            },
           );
         } catch (notificationError) {
-          logger.error('Failed to send Payme payment success notification:', notificationError);
+          logger.error(
+            'Failed to send Payme payment success notification:',
+            notificationError,
+          );
         }
       }
     } catch (error) {

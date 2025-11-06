@@ -5,25 +5,25 @@ import { ClickOnetimeController } from './click-onetime.controller';
 import { ClickOnetimeService } from './click-onetime.service';
 import { BotModule } from '../../bot/bot.module';
 import {
-    UserEntity,
-    PlanEntity,
-    TransactionEntity,
-    UserSubscriptionEntity,
+  UserEntity,
+  PlanEntity,
+  TransactionEntity,
+  UserSubscriptionEntity,
 } from '../../../shared/database/entities';
 
 @Module({
-    imports: [
-        ConfigModule,
-        BotModule,
-        TypeOrmModule.forFeature([
-            UserEntity,
-            PlanEntity,
-            TransactionEntity,
-            UserSubscriptionEntity,
-        ]),
-    ],
-    controllers: [ClickOnetimeController],
-    providers: [ClickOnetimeService],
-    exports: [ClickOnetimeService]
+  imports: [
+    ConfigModule,
+    BotModule,
+    TypeOrmModule.forFeature([
+      UserEntity,
+      PlanEntity,
+      TransactionEntity,
+      UserSubscriptionEntity,
+    ]),
+  ],
+  controllers: [ClickOnetimeController],
+  providers: [ClickOnetimeService],
+  exports: [ClickOnetimeService],
 })
-export class ClickOnetimeModule { }
+export class ClickOnetimeModule {}

@@ -1,6 +1,4 @@
-
 export class CreateCardTokenResponseDto {
-    token: string;
-    incompletePhoneNumber: string;
-
+  token: string;
+  incompletePhoneNumber: string;
 }

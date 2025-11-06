@@ -1,4 +1,4 @@
-export function  uzcardAuthHash() {
+export function uzcardAuthHash() {
   const login = process.env.UZCARD_LOGIN;
   const password = process.env.UZCARD_PASSWORD;
 

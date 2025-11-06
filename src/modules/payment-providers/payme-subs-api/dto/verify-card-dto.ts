@@ -1,18 +1,16 @@
-import {IsNotEmpty} from "class-validator";
+import { IsNotEmpty } from 'class-validator';
 
 export class VerifyCardTokenPaymeDtoDto {
+  @IsNotEmpty()
+  token: string;
 
-    @IsNotEmpty()
-    token: string;
+  @IsNotEmpty()
+  code: string;
 
-    @IsNotEmpty()
-    code: string;
+  @IsNotEmpty()
+  userId: string;
 
-    @IsNotEmpty()
-    userId: string;
+  planId: string;
 
-    planId: string
-
-    selectedService: string
-
+  selectedService: string;
 }

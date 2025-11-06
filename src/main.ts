@@ -47,7 +47,9 @@ async function bootstrap() {
       await app.listen(port);
       logger.info(`✅ Application started on port ${port} (all interfaces)`);
       console.log(`✅ Application started on port ${port} (all interfaces)`);
-      console.log(`🔍 Server accessible at: http://localhost:${port}/api or http://127.0.0.1:${port}/api`);
+      console.log(
+        `🔍 Server accessible at: http://localhost:${port}/api or http://127.0.0.1:${port}/api`,
+      );
     }
   } catch (error) {
     logger.error(`❌ Failed to start application on port ${port}:`, error);

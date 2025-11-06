@@ -4,7 +4,11 @@ import { TypeOrmModule } from '@nestjs/typeorm';
 import { ClickController } from './click.controller';
 import { ClickService } from './click.service';
 import { BotModule } from '../../bot/bot.module';
-import { UserEntity, PlanEntity, TransactionEntity } from '../../../shared/database/entities';
+import {
+  UserEntity,
+  PlanEntity,
+  TransactionEntity,
+} from '../../../shared/database/entities';
 
 @Module({
   imports: [
@@ -15,4 +19,4 @@ import { UserEntity, PlanEntity, TransactionEntity } from '../../../shared/datab
   controllers: [ClickController],
   providers: [ClickService],
 })
-export class ClickModule { }
+export class ClickModule {}

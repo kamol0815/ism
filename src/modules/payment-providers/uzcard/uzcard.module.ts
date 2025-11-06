@@ -5,7 +5,13 @@ import { TypeOrmModule } from '@nestjs/typeorm';
 import { UzCardApiController } from './uzcard.controller';
 import { UzCardApiService } from './uzcard.service';
 import { BotModule } from '../../bot/bot.module';
-import { UserEntity, PlanEntity, TransactionEntity, UserCardEntity, UserSubscriptionEntity } from '../../../shared/database/entities';
+import {
+  UserEntity,
+  PlanEntity,
+  TransactionEntity,
+  UserCardEntity,
+  UserSubscriptionEntity,
+} from '../../../shared/database/entities';
 
 @Module({
   imports: [
@@ -24,4 +30,4 @@ import { UserEntity, PlanEntity, TransactionEntity, UserCardEntity, UserSubscrip
   providers: [UzCardApiService],
   exports: [UzCardApiService],
 })
-export class UzCardApiModule { }
+export class UzCardApiModule {}

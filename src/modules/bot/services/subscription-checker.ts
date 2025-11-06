@@ -12,9 +12,12 @@ export class SubscriptionChecker {
   start(): void {
     this.runChecks();
 
-    this.checkInterval = setInterval(() => {
-      this.runChecks();
-    }, 5 * 60 * 1000); // 5 daqiqada bir marta tekshiriladi
+    this.checkInterval = setInterval(
+      () => {
+        this.runChecks();
+      },
+      5 * 60 * 1000,
+    ); // 5 daqiqada bir marta tekshiriladi
     logger.info('Subscription checker started');
   }
 

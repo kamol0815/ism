@@ -52,7 +52,7 @@ export class UzCardApiController {
   @Post('/add-card')
   async addCard(
     @Body() requestBody: AddCardDto,
-  ): Promise<AddCardResponseDto | ErrorResponse> { 
+  ): Promise<AddCardResponseDto | ErrorResponse> {
     return await this.uzCardApiService.addCard(requestBody);
   }
 

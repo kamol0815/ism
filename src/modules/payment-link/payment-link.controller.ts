@@ -1,7 +1,19 @@
-import { BadRequestException, Controller, Get, Query, Res } from '@nestjs/common';
+import {
+  BadRequestException,
+  Controller,
+  Get,
+  Query,
+  Res,
+} from '@nestjs/common';
 import { Response } from 'express';
-import { buildClickProviderUrl, ClickRedirectParams } from '../../shared/generators/click-redirect-link.generator';
-import { buildPaymeProviderUrl, PaymeLinkGeneratorParams } from '../../shared/generators/payme-link.generator';
+import {
+  buildClickProviderUrl,
+  ClickRedirectParams,
+} from '../../shared/generators/click-redirect-link.generator';
+import {
+  buildPaymeProviderUrl,
+  PaymeLinkGeneratorParams,
+} from '../../shared/generators/payme-link.generator';
 import { config } from '../../shared/config';
 import { verifySignedToken } from '../../shared/utils/signed-token.util';
 
@@ -19,14 +31,20 @@ export class PaymentLinkController {
     return res.redirect(this.resolveRedirectUrl(token, 'payme'));
   }
 
-  private resolveRedirectUrl(token: string, provider: 'click' | 'payme'): string {
+  private resolveRedirectUrl(
+    token: string,
+    provider: 'click' | 'payme',
+  ): string {
     if (!token) {
       throw new BadRequestException('Missing redirect token');
     }
 
     let payload: RedirectPayload;
     try {
-      payload = verifySignedToken<RedirectPayload>(token, config.PAYMENT_LINK_SECRET);
+      payload = verifySignedToken<RedirectPayload>(
+        token,
+        config.PAYMENT_LINK_SECRET,
+      );
     } catch (error) {
       throw new BadRequestException('Invalid or expired redirect token');
     }

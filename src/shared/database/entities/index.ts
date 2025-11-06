@@ -1,12 +1,12 @@
 export {
-    SubscriptionType,
-    PaymentProvider,
-    PaymentType,
-    TransactionStatus,
-    CardType,
-    SubscribedTo,
-    SubscriptionStatus,
-    PaymentStatus,
+  SubscriptionType,
+  PaymentProvider,
+  PaymentType,
+  TransactionStatus,
+  CardType,
+  SubscribedTo,
+  SubscriptionStatus,
+  PaymentStatus,
 } from './enums';
 
 export { UserEntity } from './user.entity';
@@ -15,3 +15,5 @@ export { TransactionEntity } from './transaction.entity';
 export { UserCardEntity } from './user-card.entity';
 export { UserSubscriptionEntity } from './user-subscription.entity';
 export { UserPaymentEntity } from './user-payment.entity';
+export { UserFavoriteNameEntity } from './user-favorite-name.entity';
+export { UserPersonaProfileEntity } from './user-persona-profile.entity';

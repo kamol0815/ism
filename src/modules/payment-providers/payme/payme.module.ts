@@ -3,7 +3,11 @@ import { TypeOrmModule } from '@nestjs/typeorm';
 import { PaymeService } from './payme.service';
 import { PaymeController } from './payme.controller';
 import { BotModule } from '../../bot/bot.module';
-import { UserEntity, PlanEntity, TransactionEntity } from '../../../shared/database/entities';
+import {
+  UserEntity,
+  PlanEntity,
+  TransactionEntity,
+} from '../../../shared/database/entities';
 
 @Module({
   imports: [
@@ -13,4 +17,4 @@ import { UserEntity, PlanEntity, TransactionEntity } from '../../../shared/datab
   controllers: [PaymeController],
   providers: [PaymeService],
 })
-export class PaymeModule { }
+export class PaymeModule {}

@@ -11,7 +11,9 @@ export type PaymeLinkGeneratorParams = {
 
 const PAYME_CHECKOUT_URL = 'https://checkout.paycom.uz';
 
-export function buildPaymeProviderUrl(params: PaymeLinkGeneratorParams): string {
+export function buildPaymeProviderUrl(
+  params: PaymeLinkGeneratorParams,
+): string {
   const merchantId = config.PAYME_MERCHANT_ID;
   const amountAsNumber = parseFloat(params.amount.toString());
   const amountInTiyns = Math.round(amountAsNumber * 100);
@@ -22,7 +24,7 @@ export function buildPaymeProviderUrl(params: PaymeLinkGeneratorParams): string 
     amountAsNumber,
     amountInTiyns,
     planId: params.planId,
-    userId: params.userId
+    userId: params.userId,
   });
 
   const paramsInString = `m=${merchantId};ac.plan_id=${params.planId};ac.user_id=${params.userId};ac.selected_service=${params.planId};a=${amountInTiyns};c=${encodeURIComponent(returnUrl)}`;

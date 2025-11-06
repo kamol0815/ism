@@ -8,5 +8,3 @@ export interface GenerateMd5HashParams {
   action: number;
   signTime: string;
 }
-
-

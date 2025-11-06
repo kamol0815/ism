@@ -1,14 +1,28 @@
-import { Injectable, BadRequestException, NotFoundException } from '@nestjs/common';
+import {
+  Injectable,
+  BadRequestException,
+  NotFoundException,
+} from '@nestjs/common';
 import { InjectRepository } from '@nestjs/typeorm';
 import { Repository, Not } from 'typeorm';
 import { CancelSubscriptionDto } from './dto/cancel-subscription.dto';
-import { UserEntity, UserCardEntity, UserSubscriptionEntity } from 'src/shared/database/entities';
-import { CardType, SubscriptionStatus } from 'src/shared/database/entities/enums';
+import {
+  UserEntity,
+  UserCardEntity,
+  UserSubscriptionEntity,
+} from 'src/shared/database/entities';
+import {
+  CardType,
+  SubscriptionStatus,
+} from 'src/shared/database/entities/enums';
 import logger from 'src/shared/utils/logger';
 import { PaymeSubsApiService } from '../payment-providers/payme-subs-api/payme-subs-api.service';
 import { ClickSubsApiService } from '../payment-providers/click-subs-api/click-subs-api.service';
 import { UzcardOnetimeApiService } from '../payment-providers/uzcard-onetime-api/uzcard-onetime-api.service';
-import { buildSubscriptionManagementLink, buildSubscriptionCancellationLink } from 'src/shared/utils/payment-link.util';
+import {
+  buildSubscriptionManagementLink,
+  buildSubscriptionCancellationLink,
+} from 'src/shared/utils/payment-link.util';
 
 @Injectable()
 export class SubscriptionManagementService {
@@ -22,7 +36,7 @@ export class SubscriptionManagementService {
     private readonly paymeSubsApiService: PaymeSubsApiService,
     private readonly clickSubsApiService: ClickSubsApiService,
     private readonly uzcardOnetimeApiService: UzcardOnetimeApiService,
-  ) { }
+  ) {}
 
   async cancelSubscription(dto: CancelSubscriptionDto) {
     const telegramId = this.parseTelegramId(dto.telegramId);
@@ -105,11 +119,11 @@ export class SubscriptionManagementService {
       case CardType.CLICK:
         return this.clickSubsApiService.deleteCard(card.cardToken);
       case CardType.UZCARD:
-        return this.uzcardOnetimeApiService.deleteCard(
-          card.userId.toString(),
-        );
+        return this.uzcardOnetimeApiService.deleteCard(card.userId.toString());
       default:
-        logger.error(`Unsupported card type for cancellation: ${card.cardType}`);
+        logger.error(
+          `Unsupported card type for cancellation: ${card.cardType}`,
+        );
         return false;
     }
   }
