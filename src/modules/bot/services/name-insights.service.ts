@@ -1,4 +1,4 @@
-import { Injectable } from '@nestjs/common';
+import { Injectable, Inject, forwardRef } from '@nestjs/common';
 import { NameMeaningService } from './name-meaning.service';
 
 export type NameGender = 'boy' | 'girl' | 'unisex';
@@ -319,7 +319,10 @@ const COMMUNITY_POLLS = [
 
 @Injectable()
 export class NameInsightsService {
-  constructor(private readonly meaningService: NameMeaningService) {}
+  constructor(
+    @Inject(forwardRef(() => NameMeaningService))
+    private readonly meaningService: NameMeaningService
+  ) { }
 
   getCategoryDescriptors(): typeof CATEGORY_DESCRIPTORS {
     return CATEGORY_DESCRIPTORS;
