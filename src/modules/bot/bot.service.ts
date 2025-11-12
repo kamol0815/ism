@@ -11,6 +11,8 @@ import { UserPersonaService } from './services/user-persona.service';
 import { UserEntity } from '../../shared/database/entities/user.entity';
 import { PlanEntity } from '../../shared/database/entities/plan.entity';
 import { TargetGender } from '../../shared/database/entities/user-persona-profile.entity';
+import { getClickRedirectLink } from '../../shared/generators/click-redirect-link.generator';
+import { generatePaymeLink } from '../../shared/generators/payme-link.generator';
 
 type FlowName = 'personalization' | 'quiz';
 
@@ -117,8 +119,8 @@ export class BotService {
 
     if (data.startsWith('onetime|')) {
       const [, provider] = data.split('|');
-      if (provider === 'click' || provider === 'payme' || provider === 'uzcard') {
-        await this.handleOnetimeProvider(ctx, provider as 'click' | 'payme' | 'uzcard');
+      if (provider === 'click' || provider === 'payme') {
+        await this.handleOnetimeProvider(ctx, provider as 'click' | 'payme');
       }
       return;
     }
@@ -917,8 +919,6 @@ export class BotService {
       .text('💙 Payme', 'onetime|payme')
       .text('🟢 Click', 'onetime|click')
       .row()
-      .text('💳 Uzcard', 'onetime|uzcard')
-      .row()
       .text('🏠 Menyu', 'main:menu');
 
     await this.safeEditOrReply(
@@ -928,7 +928,7 @@ export class BotService {
     );
   }
 
-  private async handleOnetimeProvider(ctx: BotContext, provider: 'click' | 'payme' | 'uzcard'): Promise<void> {
+  private async handleOnetimeProvider(ctx: BotContext, provider: 'click' | 'payme'): Promise<void> {
     const telegramId = ctx.from?.id;
     if (!telegramId) {
       await ctx.answerCallbackQuery('Foydalanuvchi aniqlanmadi');
@@ -946,9 +946,25 @@ export class BotService {
       return;
     }
 
-    const amount = Number(plan.price).toFixed(2);
-    const providerTitle = provider === 'click' ? 'Click' : provider === 'payme' ? 'Payme' : 'Uzcard';
-    const paymentLink = `${process.env.PAYMENT_LINK_BASE_URL ?? ''}?provider=${provider}&userId=${user.id}&planId=${plan.id}&amount=${amount}`;
+    const amount = Number(plan.price);
+    const providerTitle = provider === 'click' ? 'Click' : 'Payme';
+
+    let paymentLink: string;
+
+    if (provider === 'click') {
+      paymentLink = getClickRedirectLink({
+        amount,
+        planId: plan.id,
+        userId: user.id,
+      });
+    } else {
+      // Payme
+      paymentLink = generatePaymeLink({
+        amount,
+        planId: plan.id,
+        userId: user.id,
+      });
+    }
 
     const keyboard = new InlineKeyboard()
       .url("💳 To'lovga o'tish", paymentLink)
