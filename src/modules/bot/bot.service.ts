@@ -128,26 +128,14 @@ export class BotService {
       case 'menu':
         await this.handleMenuActions(ctx, parts);
         break;
-      case 'filter':
-        await this.handleFilterActions(ctx, parts);
-        break;
       case 'name':
         await this.handleNameCallbacks(ctx, parts);
         break;
       case 'personal':
         await this.handlePersonalizationCallbacks(ctx, parts);
         break;
-      case 'quiz':
-        await this.handleQuizCallbacks(ctx, parts);
-        break;
-      case 'fav':
-        await this.handleFavoriteCallbacks(ctx, parts);
-        break;
       case 'trend':
         await this.handleTrendCallbacks(ctx, parts);
-        break;
-      case 'community':
-        await this.handleCommunityCallbacks(ctx, parts);
         break;
       case 'main':
         await this.showMainMenu(ctx);
@@ -173,23 +161,9 @@ export class BotService {
         await this.startPersonalizationFlow(ctx);
         await ctx.answerCallbackQuery();
         break;
-      case 'filters':
-        await this.showCategoryMenu(ctx);
-        await ctx.answerCallbackQuery();
-        break;
       case 'trends':
         await this.showTrendMenu(ctx);
         await ctx.answerCallbackQuery();
-        break;
-      case 'community':
-        await this.showCommunityMenu(ctx);
-        await ctx.answerCallbackQuery();
-        break;
-      case 'feedback':
-        await ctx.answerCallbackQuery({
-          text: '📬 Fikrlaringizni @ism_support orqali qoldiring.',
-          show_alert: true,
-        } as any);
         break;
       default:
         await this.showMainMenu(ctx);
@@ -264,23 +238,7 @@ export class BotService {
     }
   }
 
-  private async handleQuizCallbacks(ctx: BotContext, parts: string[]): Promise<void> {
-    const action = parts[0];
-    if (action === 'start') {
-      await this.startQuiz(ctx);
-      await ctx.answerCallbackQuery();
-      return;
-    }
 
-    if (action === 'answer') {
-      const questionId = parts[1];
-      const value = parts[2];
-      await this.processQuizAnswer(ctx, questionId, value);
-      return;
-    }
-
-    await ctx.answerCallbackQuery();
-  }
 
   private async handleFavoriteCallbacks(ctx: BotContext, parts: string[]): Promise<void> {
     const action = parts[0];
@@ -313,27 +271,7 @@ export class BotService {
     await ctx.answerCallbackQuery();
   }
 
-  private async handleCommunityCallbacks(ctx: BotContext, parts: string[]): Promise<void> {
-    const action = parts[0];
-    switch (action) {
-      case 'poll': {
-        const poll = this.insightsService.getCommunityPoll();
-        await ctx.replyWithPoll(poll.question, poll.options, { is_anonymous: false });
-        await ctx.answerCallbackQuery();
-        break;
-      }
-      case 'share': {
-        await ctx.answerCallbackQuery({
-          text: "Har qanday chatda @ism_bot yozib inline qidiruvdan foydalaning.",
-          show_alert: true,
-        } as any);
-        break;
-      }
-      default:
-        await this.showCommunityMenu(ctx);
-        await ctx.answerCallbackQuery();
-    }
-  }
+
 
   private async handleMessage(ctx: BotContext): Promise<void> {
     const text = ctx.message?.text?.trim();
@@ -378,14 +316,7 @@ export class BotService {
       .text("🌟 Ism ma'nosi", 'name_meaning')
       .text('🎯 Shaxsiy tavsiya', 'menu:personal')
       .row()
-      .text('🧭 Filterlar', 'menu:filters')
-      .text('🧪 Mini test', 'quiz:start')
-      .row()
       .text('📈 Trendlar', 'menu:trends')
-      .text('⭐ Sevimlilar', 'fav:list:1')
-      .row()
-      .text('🌍 Jamiyat', 'menu:community')
-      .text('💬 Fikr bildirish', 'menu:feedback')
       .row()
       .switchInline('🔍 Inline qidiruv', '');
 
@@ -576,59 +507,9 @@ export class BotService {
     return false;
   }
 
-  private async showCategoryMenu(ctx: BotContext): Promise<void> {
-    const combos = this.insightsService.getCategoryCombos();
-    const keyboard = new InlineKeyboard();
-    combos.forEach((combo, index) => {
-      keyboard.text(combo.label, `filter:combo:${combo.key}:all`);
-      if (index % 2 === 1) {
-        keyboard.row();
-      }
-    });
-    keyboard.row().text('🏠 Menyu', 'main:menu');
 
-    const descriptions = Object.values(this.insightsService.getCategoryDescriptors())
-      .map((item) => `• <b>${item.label}</b> — ${item.description}`)
-      .join('\n');
 
-    await this.safeEditOrReply(
-      ctx,
-      '🧭 Yo\'nalishni tanlang:\n\n' + descriptions,
-      keyboard,
-    );
-    await ctx.answerCallbackQuery();
-  }
 
-  private async handleFilterActions(ctx: BotContext, parts: string[]): Promise<void> {
-    const comboKey = parts[1];
-    const gender = (parts[2] as TrendGender) ?? 'all';
-    const suggestions = this.insightsService.getNamesForCategory(comboKey, gender);
-    if (!suggestions.length) {
-      await ctx.answerCallbackQuery('Ismlar topilmadi');
-      return;
-    }
-
-    const lines = suggestions.slice(0, 5).map((item, index) => {
-      const emoji = item.gender === 'girl' ? '👧' : '👦';
-      return `${index + 1}. ${emoji} <b>${item.name}</b> — ${item.meaning}`;
-    });
-
-    const keyboard = new InlineKeyboard()
-      .text('👧 Qizlar', `filter:combo:${comboKey}:girl`)
-      .text("👦 O'g'illar", `filter:combo:${comboKey}:boy`)
-      .row()
-      .text('♻️ Hammasi', `filter:combo:${comboKey}:all`)
-      .text('🏠 Menyu', 'main:menu');
-
-    suggestions.slice(0, 5).forEach((item) => keyboard.row().text(item.name, `name:detail:${item.slug}`));
-
-    await this.safeEditOrReply(
-      ctx,
-      `🧭 Tanlov: ${comboKey.replace('_', ' + ')}\nFiltr: ${gender}\n\n${lines.join('\n')}`,
-      keyboard,
-    );
-    await ctx.answerCallbackQuery();
-  }
 
   private async showTrendMenu(ctx: BotContext): Promise<void> {
     const keyboard = new InlineKeyboard()
