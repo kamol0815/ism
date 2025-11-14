@@ -14,7 +14,7 @@ async function bootstrap() {
 
   // Get the config service to access environment variables properly
   const configService = app.get(ConfigService);
-  const port = configService.get<number>('APP_PORT', 8988);
+  const port = configService.get<number>('APP_PORT', 8989);
   const host = process.env.HOST; // Can be undefined for all interfaces
 
   app.setGlobalPrefix('api');
@@ -34,33 +34,33 @@ async function bootstrap() {
     credentials: true,
   });
 
+  // Log startup information BEFORE starting the server
+  console.log('\n========================================');
+  console.log('🚀 STARTING APPLICATION...');
+  console.log('========================================');
+  console.log(`📍 Port: ${port}`);
+  console.log(`🌐 Host: ${host || '0.0.0.0 (all interfaces)'}`);
+  if (host) {
+    const serverUrl = `http://${host === '0.0.0.0' ? '213.230.110.176' : host}:${port}`;
+    console.log(`🔗 Server URL: ${serverUrl}`);
+    console.log(`🔍 API Endpoint: ${serverUrl}/api`);
+  } else {
+    console.log(`🔗 Local URL: http://localhost:${port}`);
+    console.log(`🔗 Network URL: http://127.0.0.1:${port}`);
+    console.log(`� API Endpoint: http://localhost:${port}/api`);
+  }
+  console.log('========================================\n');
+
   try {
     if (host) {
-      // If HOST is specified, bind to that specific interface
       await app.listen(port, host);
       const serverUrl = `http://${host === '0.0.0.0' ? '213.230.110.176' : host}:${port}`;
-      console.log('\n========================================');
-      console.log('🚀 APPLICATION STARTED SUCCESSFULLY!');
-      console.log('========================================');
-      console.log(`📍 Port: ${port}`);
-      console.log(`🌐 Host: ${host}`);
-      console.log(`🔗 Server URL: ${serverUrl}`);
-      console.log(`🔍 API Endpoint: ${serverUrl}/api`);
-      console.log('========================================\n');
       logger.info(`✅ Application started on: ${serverUrl} (bound to ${host})`);
+      console.log('✅ Server is now listening for requests!\n');
     } else {
-      // If HOST is not specified, bind to all interfaces
       await app.listen(port);
-      console.log('\n========================================');
-      console.log('🚀 APPLICATION STARTED SUCCESSFULLY!');
-      console.log('========================================');
-      console.log(`📍 Port: ${port}`);
-      console.log(`🌐 Host: 0.0.0.0 (all interfaces)`);
-      console.log(`🔗 Local URL: http://localhost:${port}`);
-      console.log(`🔗 Network URL: http://127.0.0.1:${port}`);
-      console.log(`🔍 API Endpoint: http://localhost:${port}/api`);
-      console.log('========================================\n');
       logger.info(`✅ Application started on port ${port} (all interfaces)`);
+      console.log('✅ Server is now listening for requests!\n');
     }
   } catch (error) {
     logger.error(`❌ Failed to start application on port ${port}:`, error);
