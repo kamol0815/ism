@@ -32,4 +32,5 @@ export const config = cleanEnv(process.env, {
   SUBSCRIPTION_MANAGEMENT_BASE_URL: str({ default: '' }),
   SUBSCRIPTION_TERMS_URL: str({ default: 'https://surl.li/takrle' }),
   API_PREFIX: str({ default: 'api' }),
+  ADMIN_TELEGRAM_IDS: str({ default: '' }), // Comma-separated admin IDs
 });

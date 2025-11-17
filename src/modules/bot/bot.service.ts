@@ -13,6 +13,7 @@ import { PlanEntity } from '../../shared/database/entities/plan.entity';
 import { TargetGender } from '../../shared/database/entities/user-persona-profile.entity';
 import { getClickRedirectLink } from '../../shared/generators/click-redirect-link.generator';
 import { generatePaymeLink } from '../../shared/generators/payme-link.generator';
+import { requireAdmin } from '../../shared/utils/admin.guard';
 
 type FlowName = 'personalization' | 'quiz';
 
@@ -61,6 +62,10 @@ export class BotService {
   private registerHandlers(): void {
     this.bot.command('start', (ctx) => this.handleStart(ctx));
     this.bot.command('admin', (ctx) => this.handleAdmin(ctx));
+    this.bot.command('userinfo', (ctx) => this.handleUserInfo(ctx));
+    this.bot.command('revoke', (ctx) => this.handleRevoke(ctx));
+    this.bot.command('grant', (ctx) => this.handleGrant(ctx));
+    this.bot.command('stats', (ctx) => this.handleStats(ctx));
     this.bot.on('inline_query', (ctx) => this.handleInlineQuery(ctx));
     this.bot.on('callback_query', (ctx) => this.handleCallback(ctx));
     this.bot.on('message', (ctx) => this.handleMessage(ctx));
@@ -864,5 +869,250 @@ export class BotService {
         inline_keyboard: [[{ text: '🔮 Premium menyuni ochish', callback_data: 'main:menu' }]],
       },
     });
+  }
+
+  // ==================== ADMIN KOMANDALAR ====================
+
+  /**
+   * /userinfo <telegram_id> - Foydalanuvchi haqida to'liq ma'lumot
+   */
+  private async handleUserInfo(ctx: BotContext): Promise<void> {
+    if (!(await requireAdmin(ctx))) return;
+
+    const args = ctx.message?.text?.split(' ').slice(1);
+    if (!args || args.length === 0) {
+      await ctx.reply(
+        '📋 Foydalish:\n' +
+        '/userinfo <telegram_id>\n\n' +
+        'Misol: /userinfo 123456789'
+      );
+      return;
+    }
+
+    const targetTelegramId = parseInt(args[0]);
+    if (isNaN(targetTelegramId)) {
+      await ctx.reply('❌ Noto\'g\'ri Telegram ID!');
+      return;
+    }
+
+    const user = await this.userRepository.findOne({
+      where: { telegramId: targetTelegramId },
+    });
+
+    if (!user) {
+      await ctx.reply(`❌ Foydalanuvchi topilmadi: ${targetTelegramId}`);
+      return;
+    }
+
+    const subStatus = user.isActive ? '✅ Faol' : '❌ Faol emas';
+    const subEnd = user.subscriptionEnd
+      ? user.subscriptionEnd.toLocaleDateString('uz-UZ')
+      : 'Yo\'q';
+
+    const info = [
+      '👤 <b>Foydalanuvchi Ma\'lumotlari</b>',
+      '',
+      `📱 Telegram ID: <code>${user.telegramId}</code>`,
+      `👤 Ism: ${user.firstName || 'N/A'}`,
+      `🆔 Username: ${user.username ? '@' + user.username : 'N/A'}`,
+      '',
+      `📊 Obuna: ${subStatus}`,
+      `📅 Obuna tugashi: ${subEnd}`,
+      `🎁 Bonus olgan: ${user.hasReceivedFreeBonus ? 'Ha' : 'Yo\'q'}`,
+      '',
+      `📆 Ro'yxatdan o'tgan: ${user.createdAt.toLocaleDateString('uz-UZ')}`,
+    ].join('\n');
+
+    await ctx.reply(info, { parse_mode: 'HTML' });
+  }
+
+  /**
+   * /revoke <telegram_id> - Obunani bekor qilish (UMRBOD ham)
+   */
+  private async handleRevoke(ctx: BotContext): Promise<void> {
+    if (!(await requireAdmin(ctx))) return;
+
+    const args = ctx.message?.text?.split(' ').slice(1);
+    if (!args || args.length === 0) {
+      await ctx.reply(
+        '📋 Foydalish:\n' +
+        '/revoke <telegram_id>\n\n' +
+        'Bu komanda foydalanuvchining obunasini bekor qiladi.\n' +
+        '⚠️ Umrbod obunalarni ham bekor qiladi!\n\n' +
+        'Misol: /revoke 123456789'
+      );
+      return;
+    }
+
+    const targetTelegramId = parseInt(args[0]);
+    if (isNaN(targetTelegramId)) {
+      await ctx.reply('❌ Noto\'g\'ri Telegram ID!');
+      return;
+    }
+
+    const user = await this.userRepository.findOne({
+      where: { telegramId: targetTelegramId },
+    });
+
+    if (!user) {
+      await ctx.reply(`❌ Foydalanuvchi topilmadi: ${targetTelegramId}`);
+      return;
+    }
+
+    // Obunani to'liq bekor qilish
+    user.isActive = false;
+    user.subscriptionStart = null;
+    user.subscriptionEnd = null;
+    user.subscriptionType = null;
+
+    await this.userRepository.save(user);
+
+    await ctx.reply(
+      `✅ Obuna bekor qilindi!\n\n` +
+      `👤 Foydalanuvchi: ${user.firstName || user.telegramId}\n` +
+      `📱 ID: <code>${user.telegramId}</code>\n\n` +
+      `❌ Obuna holati: Faol emas`,
+      { parse_mode: 'HTML' }
+    );
+
+    // Foydalanuvchiga xabar yuborish
+    try {
+      await this.bot.api.sendMessage(
+        user.telegramId,
+        '⚠️ Sizning obunangiz admin tomonidan bekor qilindi.\n\n' +
+        'Yana obuna bo\'lish uchun /start ni bosing.'
+      );
+    } catch (error) {
+      this.logger.warn(`Failed to notify user ${user.telegramId}: ${error.message}`);
+    }
+  }
+
+  /**
+   * /grant <telegram_id> <days> - Obuna berish
+   * days = 0 bo'lsa UMRBOD obuna beradi
+   */
+  private async handleGrant(ctx: BotContext): Promise<void> {
+    if (!(await requireAdmin(ctx))) return;
+
+    const args = ctx.message?.text?.split(' ').slice(1);
+    if (!args || args.length < 2) {
+      await ctx.reply(
+        '📋 Foydalish:\n' +
+        '/grant <telegram_id> <days>\n\n' +
+        'days = 0 -> UMRBOD obuna\n' +
+        'days > 0 -> Kunlik obuna\n\n' +
+        'Misol:\n' +
+        '/grant 123456789 0   (umrbod)\n' +
+        '/grant 123456789 30  (30 kun)'
+      );
+      return;
+    }
+
+    const targetTelegramId = parseInt(args[0]);
+    const days = parseInt(args[1]);
+
+    if (isNaN(targetTelegramId) || isNaN(days)) {
+      await ctx.reply('❌ Noto\'g\'ri formatda ID yoki kun!');
+      return;
+    }
+
+    const user = await this.userRepository.findOne({
+      where: { telegramId: targetTelegramId },
+    });
+
+    if (!user) {
+      await ctx.reply(`❌ Foydalanuvchi topilmadi: ${targetTelegramId}`);
+      return;
+    }
+
+    const now = new Date();
+    user.isActive = true;
+    user.subscriptionStart = now;
+
+    let subscriptionText = '';
+    if (days === 0) {
+      // UMRBOD obuna
+      const farFuture = new Date('2099-12-31');
+      user.subscriptionEnd = farFuture;
+      subscriptionText = '♾️ Umrbod';
+    } else {
+      // Kunlik obuna
+      const end = new Date(now.getTime() + days * 24 * 60 * 60 * 1000);
+      user.subscriptionEnd = end;
+      subscriptionText = `${days} kun (${end.toLocaleDateString('uz-UZ')} gacha)`;
+    }
+
+    await this.userRepository.save(user);
+
+    await ctx.reply(
+      `✅ Obuna berildi!\n\n` +
+      `👤 Foydalanuvchi: ${user.firstName || user.telegramId}\n` +
+      `📱 ID: <code>${user.telegramId}</code>\n` +
+      `📅 Obuna: ${subscriptionText}\n\n` +
+      `✅ Holat: Faol`,
+      { parse_mode: 'HTML' }
+    );
+
+    // Foydalanuvchiga xabar yuborish
+    try {
+      await this.bot.api.sendMessage(
+        user.telegramId,
+        `🎉 Tabriklaymiz!\n\n` +
+        `Admin sizga ${days === 0 ? '♾️ UMRBOD' : days + ' kunlik'} obuna berdi!\n\n` +
+        `✨ Premium funksiyalardan foydalanishingiz mumkin.`,
+        {
+          reply_markup: {
+            inline_keyboard: [[{ text: '🔮 Boshlash', callback_data: 'main:menu' }]],
+          },
+        }
+      );
+    } catch (error) {
+      this.logger.warn(`Failed to notify user ${user.telegramId}: ${error.message}`);
+    }
+  }
+
+  /**
+   * /stats - To'liq statistika
+   */
+  private async handleStats(ctx: BotContext): Promise<void> {
+    if (!(await requireAdmin(ctx))) return;
+
+    const totalUsers = await this.userRepository.count();
+    const activeUsers = await this.userRepository.count({
+      where: { isActive: true }
+    });
+    const inactiveUsers = totalUsers - activeUsers;
+
+    // Umrbod obunalar (2099 yildan keyingi sanalar)
+    const lifetimeUsers = await this.userRepository
+      .createQueryBuilder('user')
+      .where('user.isActive = :active', { active: true })
+      .andWhere('user.subscriptionEnd > :farDate', {
+        farDate: new Date('2099-01-01')
+      })
+      .getCount();
+
+    // Bonuslarni hisoblash
+    const bonusUsers = await this.userRepository.count({
+      where: { hasReceivedFreeBonus: true },
+    });
+
+    const stats = [
+      '📊 <b>BOT STATISTIKASI</b>',
+      '',
+      `👥 Jami foydalanuvchilar: ${totalUsers}`,
+      `✅ Faol obunalar: ${activeUsers}`,
+      `♾️ Umrbod obunalar: ${lifetimeUsers}`,
+      `❌ Faol emas: ${inactiveUsers}`,
+      `🎁 Bonus olganlar: ${bonusUsers}`,
+      '',
+      '📋 <b>Admin Komandalar:</b>',
+      '/userinfo <id> - Ma\'lumot',
+      '/revoke <id> - Obunani bekor qilish',
+      '/grant <id> <days> - Obuna berish (0=umrbod)',
+      '/stats - Statistika',
+    ].join('\n');
+
+    await ctx.reply(stats, { parse_mode: 'HTML' });
   }
 }
