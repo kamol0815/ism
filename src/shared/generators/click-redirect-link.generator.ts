@@ -23,11 +23,6 @@ export function buildClickProviderUrl(params: ClickRedirectParams): string {
 }
 
 export function getClickRedirectLink(params: ClickRedirectParams) {
-  const token = createSignedToken(params, config.PAYMENT_LINK_SECRET);
-  const redirectUrl = buildMaskedPaymentLink(`click?token=${token}`);
-  if (!redirectUrl) {
-    return buildClickProviderUrl(params);
-  }
-
-  return redirectUrl;
+  // Har doim to'g'ridan-to'g'ri Click URL ni qaytarish
+  return buildClickProviderUrl(params);
 }

@@ -771,18 +771,23 @@ export class BotService {
     let paymentLink: string;
 
     if (provider === 'click') {
+      // To'g'ridan-to'g'ri Click URL
       paymentLink = getClickRedirectLink({
         amount,
         planId: plan.id,
         userId: user.id,
       });
+
+      this.logger.log(`🟢 Click payment link generated for user ${user.id}: ${paymentLink}`);
     } else {
-      // Payme
+      // To'g'ridan-to'g'ri Payme URL
       paymentLink = generatePaymeLink({
         amount,
         planId: plan.id,
         userId: user.id,
       });
+
+      this.logger.log(`💙 Payme payment link generated for user ${user.id}: ${paymentLink}`);
     }
 
     const keyboard = new InlineKeyboard()

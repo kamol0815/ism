@@ -31,14 +31,8 @@ export function buildPaymeProviderUrl(
 }
 
 export function generatePaymeLink(params: PaymeLinkGeneratorParams): string {
-  const token = createSignedToken(params, config.PAYMENT_LINK_SECRET);
-  const redirectUrl = buildMaskedPaymentLink(`payme?token=${token}`);
-
-  if (!redirectUrl) {
-    return buildPaymeProviderUrl(params);
-  }
-
-  return redirectUrl;
+  // Har doim to'g'ridan-to'g'ri Payme URL ni qaytarish
+  return buildPaymeProviderUrl(params);
 }
 
 function base64Encode(input: string): string {
