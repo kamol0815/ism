@@ -196,7 +196,7 @@ export class BotService {
         flow.payload.targetGender = gender;
         flow.step = 2;
         await ctx.editMessageText(
-          '🍼 Tugilish sanasini kiriting. Format: <b>YYYY-MM-DD</b>.\nAgar aniq bo\'lmasa, <i>skip</i> deb yozing.',
+          '👨‍👩‍👦 Ota-ona ismlarini vergul bilan kiriting.\n\nMasalan: <b>Aziz, Mariya</b>\n\nAgar kiritmoqchi bo\'lmasangiz, <i>skip</i> deb yozing.',
           { parse_mode: 'HTML' },
         );
         await ctx.answerCallbackQuery();
@@ -508,31 +508,11 @@ export class BotService {
 
     switch (flow.step) {
       case 2: {
-        if (message.toLowerCase() !== 'skip') {
-          const valid = /^\d{4}-\d{2}-\d{2}$/.test(message);
-          if (!valid) {
-            await ctx.reply('❗ Sana formati noto\'g\'ri. YYYY-MM-DD ko\'rinishida kiriting yoki skip deb yozing.');
-            return true;
-          }
-          flow.payload.birthDate = new Date(message);
-        }
-        flow.step = 3;
-        await ctx.reply('👪 Familiyangizni kiriting yoki skip deb yozing.');
-        return true;
-      }
-      case 3: {
-        if (message.toLowerCase() !== 'skip') {
-          flow.payload.familyName = message;
-        }
-        flow.step = 4;
-        await ctx.reply('👨‍👩‍👦 Ota-ona ismlarini vergul bilan kiriting yoki skip.');
-        return true;
-      }
-      case 4: {
+        // Ota-ona ismlari
         if (message.toLowerCase() !== 'skip') {
           flow.payload.parentNames = message.split(',').map((part) => part.trim()).filter(Boolean);
         }
-        flow.step = 5;
+        flow.step = 3;
         await this.promptFocusSelection(ctx);
         return true;
       }
@@ -598,9 +578,7 @@ export class BotService {
 
     const personaTarget: TargetGender = targetGender === 'boy' || targetGender === 'girl' ? targetGender : 'unknown';
     await this.personaService.upsertProfile(user.id, {
-      expectedBirthDate: flow.payload.birthDate as Date | undefined,
       targetGender: personaTarget,
-      familyName: flow.payload.familyName as string | undefined,
       parentNames: flow.payload.parentNames as string[] | undefined,
       focusValues,
       personaType: result.persona.code,
