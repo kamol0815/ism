@@ -513,17 +513,15 @@ export class NameInsightsService {
       })
       .sort(() => Math.random() - 0.5); // Random shuffle
 
-    // Agar ota-ona ismlari berilgan bo'lsa, ularning harflariga mos ismlarni birinchi o'ringa qo'yamiz
+    // Agar ota-ona ismlari berilgan bo'lsa, professional algoritm bilan saralanadi
     if (parentNames && parentNames.length > 0) {
-      const parentLetters = parentNames
-        .join('')
-        .toLowerCase()
-        .split('')
-        .filter(c => /[a-zа-яўғқҳ]/.test(c));
+      // Ota va ona ismlarini ajratamiz
+      const fatherName = parentNames[0]; // Birinchi ism - ota
+      const motherName = parentNames[1]; // Ikkinchi ism - ona
 
       shuffled.sort((a, b) => {
-        const aScore = this.calculateNameMatchScore(a.name, parentLetters);
-        const bScore = this.calculateNameMatchScore(b.name, parentLetters);
+        const aScore = this.calculateNameMatchScore(a.name, fatherName, motherName);
+        const bScore = this.calculateNameMatchScore(b.name, fatherName, motherName);
         return bScore - aScore; // Yuqori score birinchi
       });
     }
@@ -584,30 +582,112 @@ export class NameInsightsService {
   }
 
   /**
-   * Ism va ota-ona harflari o'rtasidagi moslikni hisoblash
+   * PROFESSIONAL ALGORITHM: Ota-ona ismlariga mos ism topish
+   * 
+   * Qoidalar:
+   * 1. Farzand ismi OTA ismining BOSH harfidan boshlanadi
+   * 2. Farzand ismi ONA ismining OXIRGI harflariga mos keladi
+   * 3. Phonetic similarity hisoblanadi
+   * 
+   * @param name - Tekshirilayotgan ism
+   * @param fatherName - Ota ismi (bosh harf uchun)
+   * @param motherName - Ona ismi (oxirgi harflar uchun)
+   * @returns Score (yuqori - yaxshiroq moslik)
    */
-  private calculateNameMatchScore(name: string, parentLetters: string[]): number {
-    const nameLetters = name.toLowerCase().split('').filter(c => /[a-zа-яўғқҳ]/.test(c));
+  private calculateNameMatchScore(
+    name: string,
+    fatherName?: string,
+    motherName?: string
+  ): number {
+    const nameLower = name.toLowerCase().replace(/\s+/g, '');
+    const nameLetters = nameLower.split('').filter(c => /[a-zа-яўғқҳ]/.test(c));
+
+    if (nameLetters.length === 0) return 0;
+
     let score = 0;
 
-    // Har bir ota-ona harfi uchun ism ichida mavjudligini tekshirish
-    for (const letter of parentLetters) {
-      if (nameLetters.includes(letter)) {
-        score += 1;
+    // ========================================
+    // 1. OTA ISMI - BOSH HARF (Very Important)
+    // ========================================
+    if (fatherName && fatherName.length > 0) {
+      const fatherFirstLetter = fatherName.toLowerCase().charAt(0);
+      const nameFirstLetter = nameLetters[0];
+
+      if (fatherFirstLetter === nameFirstLetter) {
+        score += 50; // Eng yuqori ball - bosh harf to'liq mos!
+      } else if (this.arePhoneticallySimular(fatherFirstLetter, nameFirstLetter)) {
+        score += 25; // Fonetik o'xshash harflar uchun yarim ball
       }
     }
 
-    // Birinchi harf mos kelsa, qo'shimcha ball
-    if (parentLetters.length > 0 && nameLetters.length > 0) {
-      if (nameLetters[0] === parentLetters[0]) {
-        score += 3;
+    // ========================================
+    // 2. ONA ISMI - OXIRGI HARFLAR (Very Important)
+    // ========================================
+    if (motherName && motherName.length > 0) {
+      const motherLower = motherName.toLowerCase().replace(/\s+/g, '');
+      const motherLetters = motherLower.split('').filter(c => /[a-zа-яўғқҳ]/.test(c));
+
+      // Oxirgi 2-3 harfni tekshiramiz
+      const motherSuffix = motherLetters.slice(-3).join(''); // oxirgi 3 harf
+      const motherSuffix2 = motherLetters.slice(-2).join(''); // oxirgi 2 harf
+      const motherLastLetter = motherLetters[motherLetters.length - 1];
+
+      const nameSuffix = nameLetters.slice(-3).join('');
+      const nameSuffix2 = nameLetters.slice(-2).join('');
+      const nameLastLetter = nameLetters[nameLetters.length - 1];
+
+      // Oxirgi 3 harf to'liq mos
+      if (motherSuffix && nameSuffix === motherSuffix) {
+        score += 40;
       }
+      // Oxirgi 2 harf mos
+      else if (motherSuffix2 && nameSuffix2 === motherSuffix2) {
+        score += 30;
+      }
+      // Oxirgi 1 harf mos
+      else if (motherLastLetter === nameLastLetter) {
+        score += 20;
+      }
+      // Fonetik o'xshash oxirgi harf
+      else if (this.arePhoneticallySimular(motherLastLetter, nameLastLetter)) {
+        score += 10;
+      }
+
+      // Qo'shimcha: ona ismidagi harflarning umumiy soni
+      const commonLetters = nameLetters.filter(letter => motherLetters.includes(letter)).length;
+      score += commonLetters * 2;
     }
 
-    // Random element qo'shish - har safar yangi tartib bo'lishi uchun
-    score += Math.random() * 2;
+    // ========================================
+    // 3. RANDOM ELEMENT (har safar yangi tartib)
+    // ========================================
+    score += Math.random() * 5;
 
     return score;
+  }
+
+  /**
+   * Fonetik jihatdan o'xshash harflarni aniqlash
+   * O'zbek va rus alifbosidagi o'xshash tovushlar
+   */
+  private arePhoneticallySimular(letter1: string, letter2: string): boolean {
+    const phoneticGroups = [
+      ['a', 'а', 'o', 'о'],           // ochiq unliar
+      ['e', 'е', 'э', 'i', 'и'],      // yopiq unlilar
+      ['u', 'у', 'ў', 'ӯ'],           // dumaloq unlilar
+      ['b', 'б', 'p', 'п'],           // lab undoshlari
+      ['d', 'д', 't', 'т'],           // til undoshlari
+      ['g', 'г', 'k', 'к', 'q', 'қ'], // tomoq undoshlari
+      ['z', 'з', 's', 'с'],           // sibilyantlar
+      ['zh', 'ж', 'sh', 'ш'],         // shivir tovushlar
+      ['l', 'л', 'r', 'р'],           // sonantlar
+      ['m', 'м', 'n', 'н'],           // burun undoshlari
+      ['h', 'х', 'ҳ'],                // nafas tovushlari
+    ];
+
+    return phoneticGroups.some(group =>
+      group.includes(letter1) && group.includes(letter2)
+    );
   }
 
   getCommunityPoll(): { question: string; options: string[] } {

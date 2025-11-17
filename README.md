@@ -1,10 +1,38 @@
-# 🎯 Premium Bot - MongoDB to PostgreSQL Migration
+# 🎯 Ismlar Ma'nosi Bot - Professional Name Recommendation System
 
-> **Complete migration from MongoDB/Mongoose to PostgreSQL/TypeORM with professional payment integration**
+> **Advanced Telegram bot with AI-powered name recommendations and professional parent-based name matching**
+
+## 🌟 Key Features
+
+### 🎨 Smart Name Generation
+- **Professional Algorithm**: Names start with **father's first letter** and end with **mother's last letters**
+- **Phonetic Analysis**: Advanced sound similarity matching
+- **Cultural Context**: Uzbek and Russian alphabets support
+- **Random Variation**: Different recommendations each time
+- **Scoring System**: Transparent 150+ point scoring
+
+### 💳 Payment Integration
+- **One-time Premium**: 5,555 UZS - Lifetime access
+- **Multiple Providers**: Click, Payme, UzCard
+- **Secure Transactions**: Professional error handling
+
+### 🤖 Telegram Bot Features
+- Name meaning search
+- Personalized recommendations
+- Trend analysis
+- Quiz-based profiling
+- Premium content access
 
 ## 🚀 Project Overview
 
-This is a premium Telegram bot with advanced payment integration that has been fully migrated from MongoDB to PostgreSQL. The bot supports multiple paym
+This is a premium Telegram bot with advanced payment integration that has been fully migrated from MongoDB to PostgreSQL. The bot supports multiple payment providers and includes a sophisticated name recommendation system.
+
+### ✨ Recent Updates (v2.0.0)
+- ✅ **Professional Name Matching**: Father's first letter + Mother's ending letters
+- ✅ **Phonetic Groups**: 11 phonetic similarity groups
+- ✅ **Random Shuffle**: New names every time
+- ✅ **Score System**: 50+ points for first letter, 40+ for ending match
+- ✅ **API Ready**: generatePersonalizedNames endpoint
 - ✅ **Code Quality**: Senior-level refactoring
 
 ## 🏗️ Database Schema
