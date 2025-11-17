@@ -181,18 +181,6 @@ export class BotService {
       case 'detail':
         await this.showNameDetail(ctx, slug);
         break;
-      case 'similar':
-        await this.showSimilarNames(ctx, slug);
-        break;
-      case 'translate':
-        await this.showTranslations(ctx, slug);
-        break;
-      case 'audio':
-        await this.sendAudioPreview(ctx, slug);
-        break;
-      case 'trend':
-        await this.showNameTrend(ctx, slug);
-        break;
       default:
         await ctx.answerCallbackQuery();
     }
@@ -241,24 +229,6 @@ export class BotService {
   }
 
 
-
-  private async handleFavoriteCallbacks(ctx: BotContext, parts: string[]): Promise<void> {
-    const action = parts[0];
-    if (action === 'list') {
-      const page = parseInt(parts[1] ?? '1', 10) || 1;
-      await this.showFavorites(ctx, page);
-      await ctx.answerCallbackQuery();
-      return;
-    }
-
-    if (action === 'toggle') {
-      const slug = parts[1];
-      await this.toggleFavorite(ctx, slug);
-      return;
-    }
-
-    await ctx.answerCallbackQuery();
-  }
 
   private async handleTrendCallbacks(ctx: BotContext, parts: string[]): Promise<void> {
     const action = parts[0];
@@ -393,13 +363,6 @@ export class BotService {
 
   private buildNameDetailKeyboard(slug: string): InlineKeyboard {
     return new InlineKeyboard()
-      .text('⭐ Sevimlilarga', `fav:toggle:${slug}`)
-      .text('🔁 O\'xshash', `name:similar:${slug}`)
-      .row()
-      .text('🌍 Tarjima', `name:translate:${slug}`)
-      .text('🔊 Talaffuz', `name:audio:${slug}`)
-      .row()
-      .text('📈 Trend', `name:trend:${slug}`)
       .text('🏠 Menyu', 'main:menu');
   }
 
@@ -410,65 +373,6 @@ export class BotService {
       return;
     }
     const message = this.insightsService.formatRichMeaning(record.name, record.meaning, record);
-    await this.safeEditOrReply(ctx, message, this.buildNameDetailKeyboard(record.slug));
-    await ctx.answerCallbackQuery();
-  }
-
-  private async showSimilarNames(ctx: BotContext, slug: string): Promise<void> {
-    const matches = this.insightsService.getSimilarNames(slug);
-    if (!matches.length) {
-      await ctx.answerCallbackQuery('O\'xshash ismlar topilmadi');
-      return;
-    }
-    const lines = matches.map((item, index) => {
-      const emoji = item.gender === 'girl' ? '👧' : '👦';
-      return `${index + 1}. ${emoji} <b>${item.name}</b> — ${item.meaning}`;
-    });
-    const keyboard = new InlineKeyboard();
-    matches.forEach((item) => keyboard.row().text(item.name, `name:detail:${item.slug}`));
-    keyboard.row().text('🏠 Menyu', 'main:menu');
-    await this.safeEditOrReply(ctx, `🔁 O'xshash ismlar:\n\n${lines.join('\n')}`, keyboard);
-    await ctx.answerCallbackQuery();
-  }
-
-  private async showTranslations(ctx: BotContext, slug: string): Promise<void> {
-    const translations = this.insightsService.getTranslations(slug);
-    if (!translations.length) {
-      await ctx.answerCallbackQuery('Tarjimalar mavjud emas');
-      return;
-    }
-    const record = this.insightsService.findRecordByName(slug);
-    const lines = translations.map((item) => `• ${item.language}: <b>${item.value}</b>`);
-    await this.safeEditOrReply(
-      ctx,
-      `🌍 <b>${record?.name ?? slug}</b> tarjimalari:\n\n${lines.join('\n')}`,
-      this.buildNameDetailKeyboard(slug),
-    );
-    await ctx.answerCallbackQuery();
-  }
-
-  private async sendAudioPreview(ctx: BotContext, slug: string): Promise<void> {
-    const audioUrl = this.insightsService.getAudioUrl(slug);
-    if (!audioUrl) {
-      await ctx.answerCallbackQuery('Audio mavjud emas');
-      return;
-    }
-    const record = this.insightsService.findRecordByName(slug);
-    await ctx.replyWithVoice(audioUrl, { caption: `🔊 ${record?.name ?? slug} talaffuzi` });
-    await ctx.answerCallbackQuery();
-  }
-
-  private async showNameTrend(ctx: BotContext, slug: string): Promise<void> {
-    const record = this.insightsService.findRecordByName(slug);
-    if (!record) {
-      await ctx.answerCallbackQuery('Trend ma\'lumoti yo\'q');
-      return;
-    }
-    const message =
-      `📈 <b>${record.name}</b> trend indikatorlari:\n\n` +
-      `Oy: ${record.trendIndex.monthly}\n` +
-      `Yil: ${record.trendIndex.yearly}\n` +
-      `Hududlar: ${record.regions.join(', ')}`;
     await this.safeEditOrReply(ctx, message, this.buildNameDetailKeyboard(record.slug));
     await ctx.answerCallbackQuery();
   }
@@ -556,7 +460,6 @@ export class BotService {
 
   private async showCommunityMenu(ctx: BotContext): Promise<void> {
     const keyboard = new InlineKeyboard()
-      .text('⭐ Sevimlilar', 'fav:list:1')
       .text('📊 So\'rovnoma', 'community:poll')
       .row()
       .text('🔗 Ulashish', 'community:share')
@@ -564,20 +467,20 @@ export class BotService {
 
     await this.safeEditOrReply(
       ctx,
-      '🌍 Jamiyat bo\'limi\n\nSevimli ismlaringizni boshqaring, so\'rovnomalarda qatnashing, do\'stlarga ulashing.',
+      '🌍 Jamiyat bo\'limi\n\nSo\'rovnomalarda qatnashing, do\'stlarga ulashing.',
       keyboard,
     );
   }
 
   private ensurePersonalizationSession(ctx: BotContext): FlowState {
-    if (!ctx.session.flow || (ctx.session.flow as FlowState).name !== 'personalization') {
+    if (!ctx.session.flow || (ctx.session.flow as unknown as FlowState).name !== 'personalization') {
       ctx.session.flow = {
         name: 'personalization',
         step: 1,
         payload: { focusValues: [] },
       };
     }
-    return ctx.session.flow as FlowState;
+    return ctx.session.flow as unknown as FlowState;
   }
 
   private async startPersonalizationFlow(ctx: BotContext): Promise<void> {
@@ -598,7 +501,7 @@ export class BotService {
   }
 
   private async handlePersonalizationMessage(ctx: BotContext, message: string): Promise<boolean> {
-    const flow = ctx.session.flow as FlowState | undefined;
+    const flow = ctx.session.flow as unknown as FlowState | undefined;
     if (!flow || flow.name !== 'personalization') {
       return false;
     }
@@ -665,7 +568,7 @@ export class BotService {
   }
 
   private async finalizePersonalization(ctx: BotContext): Promise<void> {
-    const flow = ctx.session.flow as FlowState | undefined;
+    const flow = ctx.session.flow as unknown as FlowState | undefined;
     if (!flow || flow.name !== 'personalization') {
       return;
     }
@@ -684,7 +587,14 @@ export class BotService {
 
     const targetGender = (flow.payload.targetGender as TrendGender | undefined) ?? 'all';
     const focusValues = (flow.payload.focusValues as string[] | undefined) ?? [];
-    const result = this.insightsService.buildPersonalizedRecommendations(targetGender, focusValues);
+    const parentNames = (flow.payload.parentNames as string[] | undefined) ?? [];
+
+    // Ota-ona ismlarini ham o'tkazamiz - har safar yangi ismlar chiqadi
+    const result = this.insightsService.buildPersonalizedRecommendations(
+      targetGender,
+      focusValues,
+      parentNames.length > 0 ? parentNames : undefined,
+    );
 
     const personaTarget: TargetGender = targetGender === 'boy' || targetGender === 'girl' ? targetGender : 'unknown';
     await this.personaService.upsertProfile(user.id, {
@@ -741,7 +651,7 @@ export class BotService {
   }
 
   private async processQuizAnswer(ctx: BotContext, questionId: string, value: string): Promise<void> {
-    const flow = ctx.session.flow as FlowState | undefined;
+    const flow = ctx.session.flow as unknown as FlowState | undefined;
     if (!flow || flow.name !== 'quiz') {
       await ctx.answerCallbackQuery();
       return;
@@ -797,7 +707,14 @@ export class BotService {
 
     const focusValues = profile?.focusValues ?? [];
     const tags = [...(ctx.session.quizTags ?? []), ...focusValues];
-    const result = this.insightsService.buildPersonalizedRecommendations(targetGender, tags);
+    const parentNames = profile?.parentNames ?? [];
+
+    // Ota-ona ismlarini ham ishlatamiz
+    const result = this.insightsService.buildPersonalizedRecommendations(
+      targetGender,
+      tags,
+      parentNames.length > 0 ? parentNames : undefined,
+    );
 
     await this.personaService.upsertProfile(user.id, {
       targetGender: targetGender === 'boy' || targetGender === 'girl' ? targetGender : 'unknown',
@@ -830,82 +747,6 @@ export class BotService {
 
   private async tryHandleFlowMessage(ctx: BotContext, message: string): Promise<boolean> {
     return this.handlePersonalizationMessage(ctx, message);
-  }
-
-  private async showFavorites(ctx: BotContext, page = 1): Promise<void> {
-    const telegramId = ctx.from?.id;
-    if (!telegramId) {
-      await ctx.reply('Foydalanuvchi aniqlanmadi');
-      return;
-    }
-    const user = await this.userRepository.findOne({ where: { telegramId } });
-    if (!user) {
-      await ctx.reply('/start yuboring');
-      return;
-    }
-
-    const list = await this.favoritesService.listFavorites(user.id, page);
-    if (!list.totalItems) {
-      const keyboard = new InlineKeyboard().text('🌟 Ism qidirish', 'name_meaning').text('🏠 Menyu', 'main:menu');
-      await this.safeEditOrReply(
-        ctx,
-        '⭐ Sevimli ismlar topilmadi. Har bir ism kartasida ⭐ tugmasini bosib qo\'shing.',
-        keyboard,
-      );
-      return;
-    }
-
-    const offset = (list.page - 1) * list.pageSize;
-    const lines = list.items.map((item, index) => {
-      const emoji = item.gender === 'girl' ? '👧' : item.gender === 'boy' ? '👦' : '✨';
-      return `${offset + index + 1}. ${emoji} <b>${item.name}</b> — ${item.origin ?? ''}`;
-    });
-
-    const keyboard = new InlineKeyboard();
-    list.items.forEach((item) => {
-      if (item.slug) {
-        keyboard.row().text(item.name, `name:detail:${item.slug}`);
-      }
-    });
-
-    if (list.totalPages > 1) {
-      const prev = page > 1 ? page - 1 : list.totalPages;
-      const next = page < list.totalPages ? page + 1 : 1;
-      keyboard.row().text('⬅️', `fav:list:${prev}`).text(`${page}/${list.totalPages}`, 'main:menu').text('➡️', `fav:list:${next}`);
-    }
-
-    keyboard.row().text('🏠 Menyu', 'main:menu');
-
-    await this.safeEditOrReply(
-      ctx,
-      `⭐ Sevimlilar (jami ${list.totalItems})\n\n${lines.join('\n')}`,
-      keyboard,
-    );
-  }
-
-  private async toggleFavorite(ctx: BotContext, slug: string): Promise<void> {
-    const telegramId = ctx.from?.id;
-    if (!telegramId) {
-      await ctx.answerCallbackQuery('Foydalanuvchi aniqlanmadi');
-      return;
-    }
-
-    const user = await this.userRepository.findOne({ where: { telegramId } });
-    if (!user) {
-      await ctx.answerCallbackQuery('/start yuboring');
-      return;
-    }
-
-    try {
-      const result = await this.favoritesService.toggleFavorite(user.id, slug);
-      await ctx.answerCallbackQuery(
-        result === 'added' ? '⭐ Sevimlilarga qo\'shildi' : '🗑 Sevimlilardan olib tashlandi',
-        { show_alert: false } as any,
-      );
-    } catch (error) {
-      this.logger.error('Toggle favorite failed', error as Error);
-      await ctx.answerCallbackQuery('Xatolik yuz berdi');
-    }
   }
 
   private async showOnetimePayment(ctx: BotContext): Promise<void> {

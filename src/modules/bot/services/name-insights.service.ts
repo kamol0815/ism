@@ -489,19 +489,46 @@ export class NameInsightsService {
   buildPersonalizedRecommendations(
     targetGender: TrendGender,
     focusTags: string[],
+    parentNames?: string[],
   ): { persona: { code: string; label: string; summary: string }; suggestions: NameSuggestion[] } {
     const persona = this.derivePersona(focusTags);
+
+    // Agar ota-ona ismlari berilgan bo'lsa, API orqali yangi ismlar generatsiya qilamiz
+    // Bu method async bo'lishi kerak, lekin arxitektura uchun sync saqlaymiz
+    // Shuning uchun local NAME_LIBRARY dan random tanlaymiz, lekin har safar aralashtiramiz
+
     const genderFilter = targetGender === 'all' ? undefined : targetGender;
-    const suggestions = NAME_LIBRARY.filter((record) => {
-      const matchesGender = !genderFilter || record.gender === genderFilter;
-      const matchesPersona = persona.summary
-        ? personaSummaryTags(persona.code).some((tag) => record.focusValues.includes(tag))
-        : true;
-      const matchesFocus = focusTags.length
-        ? focusTags.some((tag) => record.focusValues.includes(tag))
-        : true;
-      return matchesGender && matchesPersona && matchesFocus;
-    })
+
+    // Shuffle algorithm - har safar turli xil tartibda
+    const shuffled = NAME_LIBRARY
+      .filter((record) => {
+        const matchesGender = !genderFilter || record.gender === genderFilter;
+        const matchesPersona = persona.summary
+          ? personaSummaryTags(persona.code).some((tag) => record.focusValues.includes(tag))
+          : true;
+        const matchesFocus = focusTags.length
+          ? focusTags.some((tag) => record.focusValues.includes(tag))
+          : true;
+        return matchesGender && matchesPersona && matchesFocus;
+      })
+      .sort(() => Math.random() - 0.5); // Random shuffle
+
+    // Agar ota-ona ismlari berilgan bo'lsa, ularning harflariga mos ismlarni birinchi o'ringa qo'yamiz
+    if (parentNames && parentNames.length > 0) {
+      const parentLetters = parentNames
+        .join('')
+        .toLowerCase()
+        .split('')
+        .filter(c => /[a-zа-яўғқҳ]/.test(c));
+
+      shuffled.sort((a, b) => {
+        const aScore = this.calculateNameMatchScore(a.name, parentLetters);
+        const bScore = this.calculateNameMatchScore(b.name, parentLetters);
+        return bScore - aScore; // Yuqori score birinchi
+      });
+    }
+
+    const suggestions = shuffled
       .slice(0, 5)
       .map((record) => ({
         name: record.name,
@@ -514,6 +541,73 @@ export class NameInsightsService {
       }));
 
     return { persona, suggestions };
+  }
+
+  /**
+   * Async version - API dan ismlar olish (kelajakda ishlatish uchun)
+   */
+  async buildPersonalizedRecommendationsAsync(
+    targetGender: TrendGender,
+    focusTags: string[],
+    parentNames?: string[],
+  ): Promise<{ persona: { code: string; label: string; summary: string }; suggestions: NameSuggestion[] }> {
+    const persona = this.derivePersona(focusTags);
+
+    // API dan ismlar olishga harakat qilamiz
+    try {
+      const apiNames = await this.meaningService.generatePersonalizedNames({
+        gender: targetGender,
+        parentNames: parentNames ?? [],
+        focusValues: focusTags,
+        limit: 5,
+      });
+
+      if (apiNames.length > 0) {
+        const suggestions: NameSuggestion[] = apiNames.map((item) => ({
+          name: item.name,
+          gender: (item.gender as NameGender) ?? 'unisex',
+          slug: item.name.toLowerCase().replace(/\s+/g, '-'),
+          origin: item.origin ?? 'Unknown',
+          meaning: item.meaning,
+          focusValues: focusTags,
+          trendIndex: 85, // Default trend
+        }));
+
+        return { persona, suggestions };
+      }
+    } catch (error) {
+      // API ishlamasa, fallback ishlatamiz
+    }
+
+    // Fallback: local NAME_LIBRARY dan olish
+    return this.buildPersonalizedRecommendations(targetGender, focusTags, parentNames);
+  }
+
+  /**
+   * Ism va ota-ona harflari o'rtasidagi moslikni hisoblash
+   */
+  private calculateNameMatchScore(name: string, parentLetters: string[]): number {
+    const nameLetters = name.toLowerCase().split('').filter(c => /[a-zа-яўғқҳ]/.test(c));
+    let score = 0;
+
+    // Har bir ota-ona harfi uchun ism ichida mavjudligini tekshirish
+    for (const letter of parentLetters) {
+      if (nameLetters.includes(letter)) {
+        score += 1;
+      }
+    }
+
+    // Birinchi harf mos kelsa, qo'shimcha ball
+    if (parentLetters.length > 0 && nameLetters.length > 0) {
+      if (nameLetters[0] === parentLetters[0]) {
+        score += 3;
+      }
+    }
+
+    // Random element qo'shish - har safar yangi tartib bo'lishi uchun
+    score += Math.random() * 2;
+
+    return score;
   }
 
   getCommunityPoll(): { question: string; options: string[] } {
